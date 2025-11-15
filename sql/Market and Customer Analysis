@@ -1,11 +1,14 @@
-
+--BUSINESS QUESTION: Identify the top 3 cities with the highest number of customers to determine key markets for targeted marketing and logistic optimization.
+--TABLE USED: “Customers”.
+--KEY METRIC: Top Cities.
 select location,count(customer_id)as number_of_customers
  from Customers
  group by location
  order by number_of_customers desc limit 3;
 
-
-
+--BUSINESS QUESTION: Determine the distribution of customers by the number of orders placed. This insight will help in segmenting customers into one-time buyers, occasional shoppers, and regular customers for tailored marketing strategies.
+--TABLE USED: “Orders”
+--KEY METRIC: Engagement Depth Analysis 
 with pr as (
     select count(order_id)as NumberOfOrders 
     from Orders
@@ -16,29 +19,38 @@ group by NumberOfOrders
 order by NumberOfOrders asc;
 
 
+--BUSINESS QUESTION: Identify products where the average purchase quantity per order is 2 but with a high total revenue, suggesting premium product trends.
+--TABLE USED: “OrderDetails”.
+--KEY METRIC: Purchase High-Value Products.
 select product_id as Product_id,avg(quantity)as AvgQuantity,sum(quantity*price_per_unit)as TotalRevenue
 from OrderDetails
 group by product_id
 having AvgQuantity=2
 order by TotalRevenue desc;
 
-
+--BUSINESS QUESTION: For each product category, calculate the unique number of customers purchasing from it. This will help understand which categories have wider appeal across the customer base.
+--TABLE USED: "Products”, “OrderDetails”, and “Orders”.
+--KEY METRIC: Category-wise Customer Reach.
 select p.category,count(distinct o.customer_id)as unique_customers
 from Orders o join OrderDetails od on o.order_id=od.order_id
 join Products p on p.product_id=od.product_id
 group by p.category
 order by unique_customers desc;
 
-
+--BUSINESS QUESTION: Analyze the month-on-month percentage change in total sales to identify growth trends.
+--TABLE USED: “Orders”.
+--KEY METRIC: Sales Trend Analysis.
 with pr as(
     select date_format(order_date,'%Y-%m')as Month,sum(total_amount)as TotalSales
     from Orders
     group by Month)
-select Month,TotalSales,
+select Month, TotalSales,
 round(((TotalSales-lag(TotalSales)over(order by Month))/lag(TotalSales)over(order by Month))*100,2) as PercentChange
 from pr;
 
-
+--BUSINESS QUESTION: Examine how the average order value changes month-on-month. Insights can guide pricing and promotional strategies to enhance order value.
+--TABLE USED: “Orders”.
+--KEY METRIC: Average Order value Fluctuation 
 with pr as(
     select date_format(order_date,'%Y-%m')as Month,round(avg(total_amount),2)as AvgOrderValue
     from Orders
@@ -48,13 +60,17 @@ round(AvgOrderValue-lag(AvgOrderValue)over(order by Month),2)as ChangeInValue
 from pr
 order by ChangeInValue desc;
 
-
+--BUSINESS QUESTION: Based on sales data, identify products with the fastest turnover rates, suggesting high demand and the need for frequent restocking.
+--TABLE USED:“OrderDetails”.
+--KEY METRIC: Inventory Refresh Rate.
 select product_id,count(order_id)as SalesFrequency
 from OrderDetails
 group by product_id
 order by SalesFrequency desc limit 5;
 
-
+--BUSINESS QUESTION: List products purchased by less than 40% of the customer base, indicating potential mismatches between inventory and customer interest.
+--TABLE USED: “Products”, “Orders”, “OrderDetails”, and “Customers”.
+--KEY METRIC: Low engagement product.
 select p.product_id as Product_id, p.name as Name, count(distinct c.customer_id)as UniqueCustomerCount
 from Customers c join Orders o on c.customer_id=o.customer_id
 join OrderDetails od on o.order_id=od.order_id
@@ -62,7 +78,9 @@ join Products p on p.product_id=od.product_id
 group by product_id,name
 having count(distinct c.customer_id)<(SELECT COUNT(DISTINCT customer_id) FROM Customers)*0.4;
 
-
+--BUSINESS QUESTION: Evaluate the month-on-month growth rate in the customer base to understand the effectiveness of marketing campaigns and market expansion efforts.
+--TABLE USED: “Orders”.
+--KEY METRIC: Customer acquisition trends.
 with pr as (
     select customer_id,min(order_date)as firstordermonth
     from Orders
@@ -73,7 +91,9 @@ from pr
 group by FirstPurchaseMonth;
 
 
-
+--BUSINESS QUESTION:Identify the months with the highest sales volume, aiding in planning for stock levels, marketing efforts, and staffing in anticipation of peak demand periods.
+--TABLE USED: “Orders”.
+--KEY METRIC: Peak Sales Period Identification.
 select date_format(order_date,'%Y-%m')as Month,sum(total_amount)as TotalSales
 from Orders
 group by Month
