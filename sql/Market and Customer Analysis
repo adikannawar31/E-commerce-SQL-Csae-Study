@@ -1,0 +1,82 @@
+
+select location,count(customer_id)as number_of_customers
+ from Customers
+ group by location
+ order by number_of_customers desc limit 3;
+
+
+
+with pr as (
+    select count(order_id)as NumberOfOrders 
+    from Orders
+    group by customer_id)
+select NumberOfOrders,count(NumberOfOrders)as CustomerCount
+from pr
+group by NumberOfOrders
+order by NumberOfOrders asc;
+
+
+select product_id as Product_id,avg(quantity)as AvgQuantity,sum(quantity*price_per_unit)as TotalRevenue
+from OrderDetails
+group by product_id
+having AvgQuantity=2
+order by TotalRevenue desc;
+
+
+select p.category,count(distinct o.customer_id)as unique_customers
+from Orders o join OrderDetails od on o.order_id=od.order_id
+join Products p on p.product_id=od.product_id
+group by p.category
+order by unique_customers desc;
+
+
+with pr as(
+    select date_format(order_date,'%Y-%m')as Month,sum(total_amount)as TotalSales
+    from Orders
+    group by Month)
+select Month,TotalSales,
+round(((TotalSales-lag(TotalSales)over(order by Month))/lag(TotalSales)over(order by Month))*100,2) as PercentChange
+from pr;
+
+
+with pr as(
+    select date_format(order_date,'%Y-%m')as Month,round(avg(total_amount),2)as AvgOrderValue
+    from Orders
+    group by Month)
+select Month,AvgOrderValue,
+round(AvgOrderValue-lag(AvgOrderValue)over(order by Month),2)as ChangeInValue
+from pr
+order by ChangeInValue desc;
+
+
+select product_id,count(order_id)as SalesFrequency
+from OrderDetails
+group by product_id
+order by SalesFrequency desc limit 5;
+
+
+select p.product_id as Product_id, p.name as Name, count(distinct c.customer_id)as UniqueCustomerCount
+from Customers c join Orders o on c.customer_id=o.customer_id
+join OrderDetails od on o.order_id=od.order_id
+join Products p on p.product_id=od.product_id 
+group by product_id,name
+having count(distinct c.customer_id)<(SELECT COUNT(DISTINCT customer_id) FROM Customers)*0.4;
+
+
+with pr as (
+    select customer_id,min(order_date)as firstordermonth
+    from Orders
+    group by customer_id
+)
+select date_format(firstordermonth,'%Y-%m')as FirstPurchaseMonth,count(distinct customer_id )as TotalNewCustomers
+from pr
+group by FirstPurchaseMonth;
+
+
+
+select date_format(order_date,'%Y-%m')as Month,sum(total_amount)as TotalSales
+from Orders
+group by Month
+order by TotalSales desc limit 3;
+
+
